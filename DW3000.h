@@ -18,6 +18,7 @@
 // Registers
 #define GEN_CFG_AES     0x00
 #define GEN_CFG_AES_1   0x01
+#define GPIO_CTRL       0x05
 #define RX_BUFFER_0     0x12
 #define RX_BUFFER_1     0x13
 #define TX_BUFFER       0x14
@@ -27,11 +28,17 @@
 // Sub-registers
 #define DEV_ID          0x00
 #define EUI_64          0x04
+#define PANADR          0x0C
 #define TX_FCTRL        0x24
 #define TX_FCTRL_1      0x28
 #define SYS_STATUS      0x44
 #define RX_TIME         0x64
 #define TX_TIME         0x74
+#define GPIO_MODE       0x00  // GPIO Mode Control Register
+#define GPIO_PULL_EN    0x04  // GPIO Drive Strength and Pull Control
+#define GPIO_DIR        0x08  // GPIO Direction Control Register
+#define GPIO_OUT        0x0C  // GPIO Data Output Register
+#define GPIO_IRQE       0x10  // GPIO Interrupt Enable
 
 // TODO: more sub-registers ...
 
@@ -43,7 +50,7 @@ class DW3000
     uint8_t get_bit(uint32_t data, uint8_t bit);
     uint32_t get_bits(uint32_t data, uint8_t start_bit, uint8_t end_bit);
     uint32_t get_bits_buf(uint8_t* buffer, uint8_t start_bit, uint8_t end_bit);
-    uint16_t make_header(uint8_t transaction, uint8_t _reg, uint8_t _sub_reg);
+    uint16_t make_header(uint16_t transaction, uint8_t _reg, uint8_t _sub_reg);
     void init();
   public:
     DW3000();
@@ -62,6 +69,11 @@ class DW3000
     void write_txb_offset(uint16_t txb_offset);
     uint32_t read_txb_offset();
 
+    void print8bit(uint8_t data);
+    void print16bit(uint16_t data);
+    void print32bit(uint32_t data);
+    void printbufbits(uint8_t* buffer, uint8_t bytes);
+    void printbufhex(uint8_t* buffer, uint8_t bytes);
  };
 
 #endif // DW3000_H

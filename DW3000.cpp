@@ -39,18 +39,18 @@ uint32_t DW3000::get_bits_buf(uint8_t* buffer, uint8_t start_bit, uint8_t end_bi
     return (data >> start_bit) & ((1 << (end_bit - start_bit + 1)) - 1);
 }
 
-uint16_t DW3000::make_header(uint8_t transaction, uint8_t _reg, uint8_t _sub_reg)
+uint16_t DW3000::make_header(uint16_t transaction, uint8_t _reg, uint8_t _sub_reg)
 {
     uint8_t reg = _reg & 0b00011111;
-    uint8_t sub_reg = _sub_reg & 0b00111111;
+    uint8_t sub_reg = _sub_reg & 0b01111111;
     switch (transaction)
     {
         case FAST_COMMAND:
         case SHORT_ADDRESSED_READ:
         case SHORT_ADDRESSED_WRITE:
-            return transaction + ((reg & 0b00011111) << 1);
+            return transaction + (reg << 1);
         case FULL_ADDRESSED_READ:
-            return transaction + (reg << 9) + (sub_reg << 2);
+            return transaction + (((uint16_t)reg) << 9) + (((uint16_t)sub_reg) << 2);
         case FULL_ADDRESSED_WRITE:
         case MASKED_WRITE_1:
         case MASKED_WRITE_2:
@@ -96,6 +96,13 @@ void DW3000::short_addressed_write(uint8_t reg, uint8_t* buffer, uint16_t bytes)
 void DW3000::full_addressed_read(uint8_t reg, uint8_t sub_reg, uint8_t* buffer, uint16_t bytes)
 {
     uint16_t header = make_header(FULL_ADDRESSED_READ, reg, sub_reg);
+    // Serial.print("reg: 0x");
+    // Serial.print(reg, HEX);
+    // Serial.print("  sub_reg: 0x");
+    // Serial.print(sub_reg, HEX);
+    // Serial.print("  header: ");
+    // print16bit(header);
+    // Serial.println();
     digitalWrite(csPin, LOW);  // Select the device
     SPI.beginTransaction(spiSettings);  // Start SPI transaction
     SPI.transfer(header);
@@ -186,4 +193,42 @@ uint32_t DW3000::read_txb_offset()
     uint8_t buffer[4];
     full_addressed_read(GEN_CFG_AES, TX_FCTRL, buffer, 4);
     return (buffer[3]<<24) + (buffer[2]<<16) + (buffer[1]<<8) + buffer[0];
+}
+
+void DW3000::print8bit(uint8_t data)
+{
+    for (int i = 7; i >= 0; i--)
+        Serial.print(get_bit(data, i));
+}
+
+void DW3000::print16bit(uint16_t data)
+{
+    for (int i = 15; i >= 0; i--)
+        Serial.print(get_bit(data, i));
+}
+
+void DW3000::print32bit(uint32_t data)
+{
+    for (int i = 31; i >= 0; i--)
+        Serial.print(get_bit(data, i));
+}
+
+void DW3000::printbufbits(uint8_t* buffer, uint8_t bytes)
+{
+    for (int i = bytes - 1; i >= 0; i--)
+    {
+        print8bit(buffer[i]);
+        Serial.print(" ");
+    }
+}
+
+void DW3000::printbufhex(uint8_t* buffer, uint8_t bytes)
+{
+    for (int i = bytes - 1; i >= 0; i--)
+    {
+        if (buffer[i] < 0x10)
+            Serial.print("0");
+        Serial.print(buffer[i], HEX);
+        Serial.print(" ");
+    }
 }
